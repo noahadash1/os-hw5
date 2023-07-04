@@ -30,7 +30,6 @@ void signalHandler(){
 }
 
 int main(int argc, char *argv[]){
-    uint16_t serverPort;
     char* nBuffer;
     char* cBuffer;
     uint32_t n;
@@ -72,7 +71,7 @@ int main(int argc, char *argv[]){
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(serverPort);
+    serv_addr.sin_port = htons(atoi(argv[1]));
 
     if (bind(listenfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) != 0) {
         perror("Bind Failed");

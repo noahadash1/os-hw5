@@ -64,7 +64,7 @@ int main(int argc, char *argv[]){
         perror("failed to creat socket");
         exit(1);
     }
-    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int)) < 0) {
+    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(serv_addr)) < 0) {
         perror("failed to set up the socket");
         exit(1);
     }

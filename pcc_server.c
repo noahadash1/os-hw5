@@ -13,7 +13,7 @@
 
 int connfd = -1;
 int waitingForClients = 1;
-uint32_t pcc_total[95]; /// what is the size? !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+uint32_t pcc_total[95];
 void printfunc(){
     int i;
     for(i=0; i<95; i++){
@@ -22,7 +22,7 @@ void printfunc(){
     exit(0);
 }
 
-void signalHandler(){
+void SIGIT_Handler(){
     if(connfd == -1){
         printfunc();
     }
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
     char messageBuffer[1000000];
     uint32_t c = 0;
     struct sigaction sigintAction = {
-            .sa_handler = signalHandler,
+            .sa_handler = SIGIT_Handler,
             .sa_flags = SA_RESTART};
     
 
@@ -91,40 +91,23 @@ int main(int argc, char *argv[]){
         // getting N from client
         futureBytes = 4;
         pastBytes = 0;
-        while (futureBytes > 0) {
+        while(futureBytes > 0){
             nBuffer = (char*)&n + pastBytes;
             currBytes = read(connfd, nBuffer, futureBytes);
-            if (currBytes == 0 || (currBytes < 0 && (errno == ETIMEDOUT || errno == ECONNRESET || errno == EPIPE))) {
-                perror("Failed to receive N from the client (EOF, ETIMEDOUT, ECONNRESET, EPIPE). \n");
+            if(currBytes <= 0){
+                perror("failed to get N from client ");
                 close(connfd);
+                if((errno != ETIMEDOUT && errno != ECONNRESET && errno != EPIPE) && currBytes < 0){
+                    exit(1);
+                } 
                 futureBytes = 0;
                 connfd = -1;
-            } else if (currBytes < 0) {
-                perror("Failed to receive N from the client (Not handled error condition). \n");
-                close(connfd);
-                exit(1);
-            } else {
+            }
+            else{
                 pastBytes += currBytes;
                 futureBytes -= currBytes;
-            }
+            } 
         }
-        // while(futureBytes > 0){
-        //     nBuffer = (char*)&n + pastBytes;
-        //     currBytes = read(connfd, nBuffer, futureBytes);
-        //     if(currBytes <= 0){
-        //         perror("failed to get N from client ");
-        //         close(connfd);
-        //         if((errno != ETIMEDOUT && errno != ECONNRESET && errno != EPIPE) && currBytes < 0){
-        //             exit(1);
-        //         }
-        //         futureBytes = 0;
-        //         connfd = -1;
-        //     }
-        //     else{
-        //         pastBytes += currBytes;
-        //         futureBytes -= currBytes;
-        //     } 
-        // }
         if(connfd == -1){
             continue;
         }
@@ -134,26 +117,27 @@ int main(int argc, char *argv[]){
         memset(pcc_total, 0, sizeof(pcc_total));
         pastBytes = 0;
         futureBytes = n;
-        while (futureBytes > 0) {
-            if (sizeof(messageBuffer) < futureBytes) {
+        while(futureBytes > 0){
+            if(futureBytes> sizeof(messageBuffer)){
                 messageLen = sizeof(messageBuffer);
-            } else {
+            }
+            else{
                 messageLen = futureBytes;
             }
             currBytes = read(connfd, (char *) &messageBuffer, messageLen);
-            if (currBytes == 0 || (currBytes < 0 && (errno == ETIMEDOUT || errno == ECONNRESET || errno == EPIPE))) {
-                perror("Failed to receive the file content from the client (EOF, ETIMEDOUT, ECONNRESET, EPIPE). \n");
+            if(currBytes<=0){
+                perror("failed to get message from client");
                 close(connfd);
+                if((errno != ETIMEDOUT && errno != ECONNRESET && errno != EPIPE) && currBytes < 0){
+                    exit(1);
+                }
                 futureBytes = 0;
                 connfd = -1;
-            } else if (currBytes < 0) {
-                perror("Failed to receive the file content from the client (Not handled error condition). \n");
-                close(connfd);
-                exit(1);
-            } else {
-                for (i = 0; i < currBytes; i++) {
-                    if (messageBuffer[i] >= 32 && messageBuffer[i] <= 126) {
-                        pcc_curr[(int) (messageBuffer[i]) - 32]++;
+            }
+            else{
+                for(i=0; i<currBytes; i++){
+                    if(messageBuffer[i] >= 32 && messageBuffer[i] <= 126){
+                        pcc_curr[(int)(messageBuffer[i])-32]++;
                         c++;
                     }
                 }
@@ -161,74 +145,29 @@ int main(int argc, char *argv[]){
                 futureBytes -= currBytes;
             }
         }
-        // while(futureBytes > 0){
-        //     if(futureBytes> sizeof(messageBuffer)){
-        //         messageLen = sizeof(messageBuffer);
-        //     }
-        //     else{
-        //         messageLen = futureBytes;
-        //     }
-        //     currBytes = read(connfd, (char *) &messageBuffer, messageLen);
-        //     if(currBytes<=0){
-        //         perror("failed to get message from client");
-        //         close(connfd);
-        //         if((errno != ETIMEDOUT && errno != ECONNRESET && errno != EPIPE) && currBytes < 0){
-        //             exit(1);
-        //         }
-        //         futureBytes = 0;
-        //         connfd = -1;
-        //     }
-        //     else{
-        //         for(i=0; i<currBytes; i++){
-        //             if(messageBuffer[i] >= 32 && messageBuffer[i] <= 126){
-        //                 pcc_curr[(int)(messageBuffer[i])-32]++;
-        //                 c++;
-        //             }
-        //         }
-        //         pastBytes += currBytes;
-        //         futureBytes -= currBytes;
-        //     }
-        // }
         if(connfd == -1){
             continue;
         }
         c = htonl(c);
         pastBytes = 0;
         futureBytes = 4;
-        while (futureBytes > 0) {
-            cBuffer = (char*)&c + pastBytes;  
+        while(futureBytes > 0){
+            cBuffer = (char*)&c + pastBytes;          
             currBytes = write(connfd, cBuffer, futureBytes);
-            if (currBytes == 0 || (currBytes < 0 && (errno == ETIMEDOUT || errno == ECONNRESET || errno == EPIPE))) {
-                perror("Failed to send C to the client (EOF, ETIMEDOUT, ECONNRESET, EPIPE). \n");
+            if(currBytes<=0){
+                perror("failed to send c to client");
                 close(connfd);
+                if((errno != ETIMEDOUT && errno != ECONNRESET && errno != EPIPE) && currBytes < 0){
+                    exit(1);
+                }
                 futureBytes = 0;
                 connfd = -1;
-            } else if (currBytes < 0) {
-                perror("Failed to send C to the client (Not handled error condition). \n");
-                close(connfd);
-                exit(1);
-            } else {
+            }
+            else{
                 pastBytes += currBytes;
                 futureBytes -= currBytes;
-            }
+            }   
         }
-        // while(futureBytes > 0){
-        //     cBuffer = (char*)&c + pastBytes;          
-        //     currBytes = write(connfd, cBuffer, futureBytes);
-        //     if(currBytes<=0){
-        //         perror("failed to send c to client");
-        //         close(connfd);
-        //         if((errno != ETIMEDOUT && errno != ECONNRESET && errno != EPIPE) && currBytes < 0){
-        //             exit(1);
-        //         }
-        //         futureBytes = 0;
-        //         connfd = -1;
-        //     }
-        //     else{
-        //         pastBytes += currBytes;
-        //         futureBytes -= currBytes;
-        //     }   
-        // }
         if (connfd == -1){
             continue;
         }

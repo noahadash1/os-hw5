@@ -19,12 +19,12 @@ void printfunc(){
     for(i=0; i<95; i++){
         printf("char '%c' : %u times\n",(char) (32+i), pcc_total[i]);
     }
+    exit(0);
 }
 
 void signalHandler(){
     if(connfd == -1){
         printfunc();
-        exit(0);
     }
     waitingForClients = 0;
 }
@@ -180,5 +180,4 @@ int main(int argc, char *argv[]){
         c = 0;
     }
     printfunc();
-    exit(0);
 }

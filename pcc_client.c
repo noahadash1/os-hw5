@@ -109,7 +109,7 @@ int main(int argc, char *argv[]){
     }
     //printing the number of printable characters from server
     result = ntohl(printableCharNum);
-    printf(" # of printable characters: %u\n", result);
+    printf("# of printable characters: %u\n", result);
     close(socketDescriptor);
     exit(0);
 }

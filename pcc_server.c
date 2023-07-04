@@ -139,8 +139,6 @@ int main(int argc, char *argv[]){
                     if(messageBuffer[i] >= 32 && messageBuffer[i] <= 126){
                         pcc_curr[(int)(messageBuffer[i])-32]++;
                         c++;
-                        print("i = %d", i);
-                        print("nums of %d is %d", i, messageBuffer[i]);
                     }
                 }
                 pastBytes += currBytes;
